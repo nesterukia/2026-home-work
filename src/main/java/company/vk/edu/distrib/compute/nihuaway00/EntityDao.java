@@ -3,15 +3,28 @@ package company.vk.edu.distrib.compute.nihuaway00;
 import company.vk.edu.distrib.compute.Dao;
 
 import java.io.IOException;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class EntityDao implements Dao<byte[]> {
-    Map<String, byte[]> map = new ConcurrentHashMap<>();
+    private final Path baseDir;
 
-    public boolean available(){
-        return true;
+    public EntityDao(Path baseDir) throws IOException {
+        this.baseDir = baseDir;
+        Files.createDirectories(baseDir);
+    }
+
+    public boolean available() {
+        try {
+            Path probe = baseDir.resolve(".probe");
+            Files.write(probe, new byte[]{});
+            Files.delete(probe);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     @Override
@@ -19,12 +32,12 @@ public class EntityDao implements Dao<byte[]> {
         if (key == null || key.isEmpty() || key.isBlank()) {
             throw new IllegalArgumentException();
         }
-        var candidate = map.get(key);
-        if (candidate == null) {
+
+        try {
+            return Files.readAllBytes(baseDir.resolve(key));
+        } catch (NoSuchFileException e) {
             throw new NoSuchElementException();
         }
-
-        return map.get(key);
     }
 
     @Override
@@ -33,7 +46,7 @@ public class EntityDao implements Dao<byte[]> {
             throw new IllegalArgumentException();
         }
 
-        map.put(key, value);
+        Files.write(baseDir.resolve(key), value);
     }
 
     @Override
@@ -41,12 +54,16 @@ public class EntityDao implements Dao<byte[]> {
         if (key == null || key.isEmpty() || key.isBlank()) {
             throw new IllegalArgumentException();
         }
-
-        map.remove(key);
+        try {
+            Files.delete(baseDir.resolve(key));
+        } catch (NoSuchFileException e) {
+            // если файла нет, все итак ок
+        }
     }
 
     @Override
     public void close() throws IOException {
+        // он тут не нужен, т.к. файлы закрываются после каждой операции
         return;
     }
 }

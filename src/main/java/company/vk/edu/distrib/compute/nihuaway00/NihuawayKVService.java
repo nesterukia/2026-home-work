@@ -4,7 +4,9 @@ import com.sun.net.httpserver.HttpServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
 
 public class NihuawayKVService implements company.vk.edu.distrib.compute.KVService {
     private static final Logger log = LoggerFactory.getLogger(NihuawayKVService.class);
@@ -37,8 +39,9 @@ public class NihuawayKVService implements company.vk.edu.distrib.compute.KVServi
         }
     }
 
-    private void registerContexts(){
-        EntityDao dao = new EntityDao();
+    private void registerContexts() throws IOException {
+        Path baseDir = Path.of("./storage/");
+        EntityDao dao = new EntityDao(baseDir);
         server.createContext("/v0/entity", new EntityHandler(dao));
         server.createContext("/v0/status", new PingHandler(dao));
     }
