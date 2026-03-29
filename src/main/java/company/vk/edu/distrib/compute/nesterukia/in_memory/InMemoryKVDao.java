@@ -1,4 +1,4 @@
-package company.vk.edu.distrib.compute.nesterukia;
+package company.vk.edu.distrib.compute.nesterukia.in_memory;
 
 import company.vk.edu.distrib.compute.Dao;
 import org.slf4j.Logger;
