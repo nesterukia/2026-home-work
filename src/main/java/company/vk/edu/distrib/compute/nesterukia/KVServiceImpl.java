@@ -10,13 +10,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
+import static company.vk.edu.distrib.compute.nesterukia.utils.HttpUtils.parseQueryParams;
+import static company.vk.edu.distrib.compute.nesterukia.utils.HttpUtils.sendResponse;
 
 public class KVServiceImpl implements KVService {
     private static final Logger log = LoggerFactory.getLogger(KVServiceImpl.class);
@@ -25,11 +25,8 @@ public class KVServiceImpl implements KVService {
     private static final String STATUS_URI = "/status";
     private static final String ENTITY_URI = "/entity";
     private static final String ID_QUERY_PARAM = "id";
-    private static final String QUERY_PARAM_DELIMITER = "&";
-    private static final String KEY_VALUE_DELIMITER = "=";
-
     private static final int SERVER_STOP_TIMEOUT_SEC = 1;
-    private static final int EMPTY_RESPONSE_LENGTH = 0;
+
     private final HttpServer server;
     private final Dao<byte[]> dao;
 
@@ -56,15 +53,7 @@ public class KVServiceImpl implements KVService {
 
         server.createContext(BASE_URI.concat(ENTITY_URI), new ErrorHttpHandler(http -> {
             final String requestMethod = http.getRequestMethod();
-            final Map<String, String> queryParams = Arrays.stream(http.getRequestURI()
-                    .getQuery()
-                    .split(QUERY_PARAM_DELIMITER))
-                    .map(param -> param.split(KEY_VALUE_DELIMITER))
-                    .filter(arr -> arr.length == 2)
-                    .collect(Collectors.toMap(
-                            arr -> arr[0],
-                            arr -> arr[1]
-                    ));
+            final Map<String, String> queryParams = parseQueryParams(http);
 
             final String entityId = queryParams.get(ID_QUERY_PARAM);
             if (entityId == null) {
@@ -105,21 +94,10 @@ public class KVServiceImpl implements KVService {
         log.info("Server has stopped.");
     }
 
-    private static void sendResponse(HttpExchange exchange, int statusCode) throws IOException {
-        exchange.sendResponseHeaders(statusCode, EMPTY_RESPONSE_LENGTH);
-    }
-
-    private static void sendResponse(HttpExchange exchange, int statusCode, byte[] responseBody) throws IOException {
-        exchange.sendResponseHeaders(statusCode, responseBody.length);
-        try (OutputStream os = exchange.getResponseBody()) {
-            os.write(responseBody);
-        }
-    }
-
     private record ErrorHttpHandler(HttpHandler delegate) implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            try (AutoCloseableHttpExchange wrapped = new AutoCloseableHttpExchange(exchange)) {
+            try (HttpUtils.AutoCloseableHttpExchange wrapped = new HttpUtils.AutoCloseableHttpExchange(exchange)) {
                 HttpExchange wrappedExchange = wrapped.get();
                 try {
                     delegate.handle(wrappedExchange);
@@ -133,17 +111,6 @@ public class KVServiceImpl implements KVService {
                     sendResponse(wrappedExchange, HttpUtils.StatusConstants.SERVICE_UNAVAILABLE);
                 }
             }
-        }
-    }
-
-    private record AutoCloseableHttpExchange(HttpExchange exchange) implements AutoCloseable {
-        public HttpExchange get() {
-            return exchange;
-        }
-
-        @Override
-        public void close() {
-            exchange.close();
         }
     }
 }
