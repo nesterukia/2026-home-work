@@ -1,15 +1,16 @@
 package company.vk.edu.distrib.compute;
 
-import module java.base;
-import company.vk.edu.distrib.compute.mandesero.KVServiceFactoryImpl;
+import company.vk.edu.distrib.compute.aldor7705.KVServiceFactorySimple;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class Server {
 
     void main() throws IOException {
         var log = LoggerFactory.getLogger("server");
         var port = 8080;
-        KVService storage = new KVServiceFactoryImpl().create(port);
+        KVService storage = new KVServiceFactorySimple().create(port);
         storage.start();
         log.info("Server started on port {}", port);
         Runtime.getRuntime().addShutdownHook(new Thread(storage::stop));
