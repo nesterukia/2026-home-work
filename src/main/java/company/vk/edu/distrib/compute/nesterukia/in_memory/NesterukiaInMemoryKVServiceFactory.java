@@ -6,12 +6,12 @@ import company.vk.edu.distrib.compute.nesterukia.KVServiceImpl;
 
 import java.io.IOException;
 
-public class InMemoryKVServiceFactory extends KVServiceFactory {
+public class NesterukiaInMemoryKVServiceFactory extends KVServiceFactory {
     @Override
     protected KVService doCreate(int port) throws IOException {
         return new KVServiceImpl(
                 port,
-                new InMemoryKVDao()
+                new NesterukiaInMemoryKVDao()
         );
     }
 }

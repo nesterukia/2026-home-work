@@ -16,12 +16,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static company.vk.edu.distrib.compute.nesterukia.utils.FileSystemUtils.getFilePath;
 import static company.vk.edu.distrib.compute.nesterukia.utils.FileSystemUtils.validateKey;
 
-public class FileSystemKVDao implements Dao<byte[]> {
+public class NesterukiaFileSystemKVDao implements Dao<byte[]> {
 
     private final Path storageDir;
     private final Map<String, ReentrantReadWriteLock> keyLocks;
 
-    public FileSystemKVDao(String storagePath) throws IOException {
+    public NesterukiaFileSystemKVDao(String storagePath) throws IOException {
         this.storageDir = Paths.get(storagePath);
         this.keyLocks = new ConcurrentHashMap<>();
 
@@ -39,18 +39,14 @@ public class FileSystemKVDao implements Dao<byte[]> {
         validateKey(key);
 
         Path file = getFilePath(key, storageDir);
-        ReentrantReadWriteLock lock = keyLocks.get(key);
+        ReentrantReadWriteLock lock = getLock(key);
 
-        if (lock != null) {
-            lock.readLock().lock();
-            try {
-                return FileSystemUtils.readFileContent(file);
-            } finally {
-                lock.readLock().unlock();
-            }
+        lock.readLock().lock();
+        try {
+            return FileSystemUtils.readFileContent(file);
+        } finally {
+            lock.readLock().unlock();
         }
-
-        return FileSystemUtils.readFileContent(file);
     }
 
     @Override
@@ -77,23 +73,13 @@ public class FileSystemKVDao implements Dao<byte[]> {
     public void delete(String key) throws IllegalArgumentException, IOException {
         validateKey(key);
         Path file = getFilePath(key, storageDir);
-        ReentrantReadWriteLock lock = keyLocks.get(key);
+        ReentrantReadWriteLock lock = getLock(key);
 
-        if (lock != null) {
-            lock.writeLock().lock();
-            try {
-                boolean deleted = Files.deleteIfExists(file);
-                if (deleted) {
-                    cleanupLock(key);
-                }
-            } finally {
-                lock.writeLock().unlock();
-            }
-        }
-
-        boolean deleted = Files.deleteIfExists(file);
-        if (deleted) {
-            cleanupLock(key);
+        lock.writeLock().lock();
+        try {
+            Files.deleteIfExists(file);
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
@@ -104,12 +90,5 @@ public class FileSystemKVDao implements Dao<byte[]> {
 
     private ReentrantReadWriteLock getLock(String key) {
         return keyLocks.computeIfAbsent(key, k -> new ReentrantReadWriteLock());
-    }
-
-    private void cleanupLock(String key) {
-        ReentrantReadWriteLock lock = keyLocks.get(key);
-        if (lock != null && !lock.hasQueuedThreads() && lock.getReadLockCount() == 0 && !lock.isWriteLocked()) {
-            keyLocks.remove(key, lock);
-        }
     }
 }
