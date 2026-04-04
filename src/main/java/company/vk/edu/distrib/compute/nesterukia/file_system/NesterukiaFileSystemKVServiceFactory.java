@@ -6,14 +6,14 @@ import company.vk.edu.distrib.compute.nesterukia.KVServiceImpl;
 
 import java.io.IOException;
 
-public class FileSystemKVServiceFactory extends KVServiceFactory {
+public class NesterukiaFileSystemKVServiceFactory extends KVServiceFactory {
     private static final String PERSISTENT_STORAGE_PATH = "storage";
 
     @Override
     protected KVService doCreate(int port) throws IOException {
         return new KVServiceImpl(
                 port,
-                new FileSystemKVDao(PERSISTENT_STORAGE_PATH)
+                new NesterukiaFileSystemKVDao(PERSISTENT_STORAGE_PATH)
         );
     }
 }

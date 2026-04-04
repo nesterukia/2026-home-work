@@ -9,8 +9,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class InMemoryKVDao implements Dao<byte[]> {
-    private static final Logger log = LoggerFactory.getLogger(InMemoryKVDao.class);
+public class NesterukiaInMemoryKVDao implements Dao<byte[]> {
+    private static final Logger log = LoggerFactory.getLogger(NesterukiaInMemoryKVDao.class);
 
     private static final Map<String, byte[]> IN_MEMORY_STORAGE = new ConcurrentHashMap<>();
 
