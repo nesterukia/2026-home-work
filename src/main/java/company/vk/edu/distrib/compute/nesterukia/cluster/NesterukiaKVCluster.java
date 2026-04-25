@@ -1,11 +1,11 @@
 package company.vk.edu.distrib.compute.nesterukia.cluster;
 
 import company.vk.edu.distrib.compute.KVCluster;
-import company.vk.edu.distrib.compute.KVService;
 import company.vk.edu.distrib.compute.KVServiceFactory;
 import company.vk.edu.distrib.compute.nesterukia.KVServiceImpl;
 import company.vk.edu.distrib.compute.nesterukia.file_system.NesterukiaFileSystemKVServiceFactory;
 import company.vk.edu.distrib.compute.nesterukia.utils.ClusterUtils;
+import company.vk.edu.distrib.compute.nesterukia.utils.HashingAlgorithm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,12 +16,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NesterukiaKVCluster implements KVCluster {
 
+    private static final Logger log = LoggerFactory.getLogger(NesterukiaKVCluster.class);
     private final Map<String, KVServiceImpl> nodesMap = new ConcurrentHashMap<>();
     private final KVServiceFactory kvServiceFactory;
-    private static final Logger log = LoggerFactory.getLogger(NesterukiaKVCluster.class);
 
-    public NesterukiaKVCluster(List<Integer> ports) {
-        this.kvServiceFactory = new NesterukiaFileSystemKVServiceFactory();
+    public NesterukiaKVCluster(List<Integer> ports, HashingAlgorithm algorithm) {
+
+        Router routerImpl = Router.getRouterImpl(algorithm);
+        this.kvServiceFactory = new NesterukiaFileSystemKVServiceFactory(
+                routerImpl
+        );
 
         ports.forEach(port -> {
             try {
@@ -33,6 +37,8 @@ public class NesterukiaKVCluster implements KVCluster {
                 log.error("Error on cluster initialization: {}", e.getMessage());
             }
         });
+
+        routerImpl.setNodesMap(nodesMap);
     }
 
     @Override
