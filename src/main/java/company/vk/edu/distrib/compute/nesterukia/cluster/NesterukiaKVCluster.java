@@ -34,7 +34,8 @@ public class NesterukiaKVCluster implements KVCluster {
                         (KVServiceImpl) kvServiceFactory.create(port)
                 );
             } catch (IOException e) {
-                log.error("Error on cluster initialization: {}", e.getMessage());
+                final String exMessage = e.getMessage();
+                log.error("Error on cluster initialization: {}", exMessage);
             }
         });
 
